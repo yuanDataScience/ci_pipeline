@@ -1,27 +1,35 @@
 import json
+import yaml
 
-from metrics_and_plots import save_metrics, save_predictions, save_roc_curve
+
 from model import evaluate_model, train_model
 from utils import (PROCESSED_TRAINING_DATASET, PROCESSED_TESTING_DATASET,
-                   load_data, load_hyperparameters, RFC_BEST_PARRMS, TARGET_COLUMN)
+                   load_data, PARAMS_CONFIG, SEED, TARGET_COLUMN)
+from hp_tune import hp_tune_pipeline
+from mlflow_utils import upload_training
 
 
 def main():
     train_X, train_y = load_data(PROCESSED_TRAINING_DATASET, TARGET_COLUMN)
     test_X, test_y = load_data(PROCESSED_TESTING_DATASET, TARGET_COLUMN)
 
-    # Load hyperparameters from the JSON file
-    hyperparameters = load_hyperparameters(RFC_BEST_PARRMS)
-    model = train_model(train_X, train_y, hyperparameters)
-    metrics, y_pred, y_pred_proba = evaluate_model(model, test_X, test_y)
+    with open(PARAMS_CONFIG) as f:
+        params = yaml.safe_load(f)
+
+    study = hp_tune_pipeline(train_X, train_y, params, SEED, 10)
+    best_params = study.best_params
+    best_params['random_state'] = SEED
+
+    # train model
+    model = train_model(train_X, train_y, best_params)
+    metrics = evaluate_model(model, test_X, test_y)
 
     print("====================Test Set Metrics==================")
     print(json.dumps(metrics, indent=2))
     print("======================================================")
 
-    save_metrics(metrics)
-    save_predictions(test_y, y_pred)
-    save_roc_curve(test_y, y_pred_proba)
+    upload_training(model, metrics, best_params)
+
 
 
 if __name__ == "__main__":

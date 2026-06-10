@@ -8,9 +8,8 @@ from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.pipeline import Pipeline
 import optuna
 
-from utils import (PROCESSED_TRAINING_DATASET, load_data, get_hp_tuning_results,
-                   RFC_BEST_PARRMS, HP_TUNE_RESULTS, TARGET_COLUMN,
-                   SEED, PARAMS_CONFIG, create_preprocess_pipeline)
+from utils import (PROCESSED_TRAINING_DATASET, load_data, RFC_BEST_PARRMS,
+                   TARGET_COLUMN, SEED, PARAMS_CONFIG, create_preprocess_pipeline)
 
 
 def hp_tune_pipeline(train_x: pd.DataFrame, train_y: pd.Series,
@@ -83,9 +82,6 @@ def main():
     with open(RFC_BEST_PARRMS, "w") as outfile:
         json.dump(best_params, outfile)
 
-    markdown_table = get_hp_tuning_results(study)
-    with open(HP_TUNE_RESULTS, "w") as markdown_file:
-        markdown_file.write(markdown_table)
 
 
 if __name__ == "__main__":

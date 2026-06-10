@@ -40,72 +40,17 @@ spec:
         }
 
 
-    triggers {
-        pollSCM('H 5 * * *') // Polls daily at 5 AM
-    }
-
     stages{
-        stage('Verify Python') {
+        stage('Checkout Code') {
             steps {
-                sh 'python3 --version'
-                sh 'which python3'
-                sh 'pip3 --version'
-            }
-        }
-
-         stage('Checkout Code') {
-             steps {
                  // Use Jenkins' built-in Git step
-                 git url: 'git@github.com:yuanDataScience/dvc_pipeline.git',
+                 git url: 'git@github.com:yuanDataScience/ci_pipeline.git',
                  credentialsId: 'github_ssh',
                  branch: 'main'
-             }
+            }
          }
 
-//         stage('Verify MinIO Credentials (Env)') {
-//             steps {
-//                 sh '''
-//                     [ -n "$AWS_ACCESS_KEY_ID" ] || exit 1
-//                     [ -n "$AWS_SECRET_ACCESS_KEY" ] || exit 1
-//                     echo "MinIO credentials present"
-//                 '''
-//             }
-//         }
-//
-//         stage('Verify MinIO Access (mc)') {
-//             steps {
-//                 sh '''
-//                     mc alias set minio http://minio.mlops.svc.cluster.local:9000 \
-//                         "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY"
-//
-//                     echo "MinIO buckets:"
-//                     mc ls minio
-//                 '''
-//             }
-//         }
 
-
-stage('Verify DVC Configuration') {
-            steps {
-                sh '''
-                    dvc --version
-                    dvc root
-                    dvc remote list
-                    dvc remote default
-                    echo "DVC configuration valid"
-                '''
-            }
-        }
-
-stage('Verify DVC Access to MinIO') {
-    steps {
-        sh '''
-            echo "Checking DVC ↔ MinIO connectivity (read-only)"
-            dvc status -c
-            echo "DVC remote is reachable"
-        '''
-    }
-}
         stage('Setup Python Environment') {
             steps {
                 sh '''
@@ -119,24 +64,55 @@ stage('Verify DVC Access to MinIO') {
         }
 
 
-
-        stage('Run Tests') {
+        stage('load training data') {
             steps {
                 sh '''
                     . venv/bin/activate
-                    which pytest
-                    export PYTHONPATH=$(pwd)
-                    pytest
+                    python3 src/utils.py
                 '''
             }
         }
 
-        stage('Git Push Test') {
+        stage('preprocess data') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    python3 src/process_dataset.py
+                '''
+            }
+        }
+
+        stage('update git and dvc') {
+            dvc add data/raw_dataset/train.csv
+            dvc add data/raw_dataset/test.csv
+            dvc add data/processed_dataset/train.csv
+            dvc add data/processed_dataset/test.csv
+
+            git add data/raw_dataset/*.dvc
+            git add data/processed_dataset/*.dvc
+            git add .gitignore
+
+            dvc push
+            git push
+
+        }
+
+        stage('train model') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    python3 src/train.py
+                '''
+            }
+        }
+
+
+
+        stage('Git update deployment') {
             steps {
                 sshagent(credentials: ['github_ssh']) {
                 sh '''
                 set -e
-
 
                 mkdir -p ~/.ssh
                 ssh-keyscan github.com >> ~/.ssh/known_hosts

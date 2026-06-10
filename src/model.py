@@ -32,8 +32,4 @@ def evaluate_model(model: Pipeline, X_test: pd.DataFrame, y_test: pd.Series,
         "f1_score": f1,
     }
 
-    metrics = json.loads(
-        json.dumps(metrics), parse_float=lambda x: round(float(x), float_precision)
-    )
-
-    return metrics, y_pred, y_proba
+    return metrics
