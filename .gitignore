@@ -1,0 +1,6 @@
+data/raw_dataset/*.csv
+data/processed_dataset/*.csv
+*.ipynb
+.ipynb_checkpoints/
+.dvc/cache/
+.idea
