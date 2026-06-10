@@ -44,11 +44,21 @@ spec:
         stage('Checkout Code') {
             steps {
                  // Use Jenkins' built-in Git step
-                 git url: 'git@github.com:yuanDataScience/ci_pipeline.git',
-                 credentialsId: 'github_ssh',
-                 branch: 'main'
+                 sshagent(credentials: ['github_ssh']) {
+                     sh '''
+                     set -e
+
+                mkdir -p ~/.ssh
+                ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+                git clone git@github.com:yuanDataScience/ci_pipeline.git
+                cd ci_pipeline
+
+                '''
+                 }
+
             }
-         }
+        }
 
 
         stage('Setup Python Environment') {
@@ -83,6 +93,8 @@ spec:
         }
 
         stage('update git and dvc') {
+            git config user.name "jenkins"
+            git config user.email "jenkins@ci.local"
             dvc add data/raw_dataset/train.csv
             dvc add data/raw_dataset/test.csv
             dvc add data/processed_dataset/train.csv
@@ -91,6 +103,9 @@ spec:
             git add data/raw_dataset/*.dvc
             git add data/processed_dataset/*.dvc
             git add .gitignore
+
+            git config user.name "jenkins"
+            git config user.email "jenkins@ci.local"
 
             dvc push
             git push
