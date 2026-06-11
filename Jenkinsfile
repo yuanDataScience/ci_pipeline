@@ -87,6 +87,7 @@ spec:
                 sh '''
                     . venv/bin/activate
                     python3 src/process_dataset.py
+                    python3 -m pip install --upgrade pip
                 '''
             }
         }
