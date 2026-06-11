@@ -53,7 +53,6 @@ spec:
 
                 git clone git@github.com:yuanDataScience/ci_pipeline.git
                 cd ci_pipeline
-
                 '''
                  }
 
@@ -93,35 +92,58 @@ spec:
         }
 
         stage('update git and dvc') {
-            git config user.name "jenkins"
-            git config user.email "jenkins@ci.local"
-            dvc add data/raw_dataset/train.csv
-            dvc add data/raw_dataset/test.csv
-            dvc add data/processed_dataset/train.csv
-            dvc add data/processed_dataset/test.csv
+            sh '''
+                git config user.name "jenkins"
+                git config user.email "jenkins@ci.local"
+                dvc add data/raw_dataset/train.csv
+                dvc add data/raw_dataset/test.csv
+                dvc add data/processed_dataset/train.csv
+                dvc add data/processed_dataset/test.csv
 
-            git add data/raw_dataset/*.dvc
-            git add data/processed_dataset/*.dvc
-            git add .gitignore
+                git add data/raw_dataset/*.dvc
+                git add data/processed_dataset/*.dvc
+                git add .gitignore
 
-            git config user.name "jenkins"
-            git config user.email "jenkins@ci.local"
+                git config user.name "jenkins"
+                git config user.email "jenkins@ci.local"
 
-            dvc push
-            git push
+                dvc push
+                git push
+            '''
 
         }
 
-        stage('train model') {
+        stage('Extract Git Metadata') {
             steps {
-                sh '''
-                    . venv/bin/activate
-                    python3 src/train.py
-                '''
+                dir('ci_pipeline') {
+                    script {
+                        env.GIT_SHA = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+                        env.GIT_BRANCH = sh(script: "git rev-parse --abbrev-ref HEAD", returnStdout: true).trim()
+                        env.SHORT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    }
+                }
             }
         }
 
 
+        stage('train model') {
+//              environment {
+//                 //extract the first 7 characters of the Git Commit Hash
+//                 // Fall back to 'latest' if GIT_COMMIT isn't populated for some reason
+//
+//                 SHORT_SHA = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'}"
+//             }
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    python3 src/train.py \
+                    --sha_id ${SHORT_SHA} \
+                    --git_sha ${GIT_SHA} \
+                    --git_branch ${GIT_BRANCH}
+
+                '''
+            }
+        }
 
         stage('Git update deployment') {
             steps {
@@ -145,7 +167,6 @@ spec:
                 git diff --cached --quiet || git commit -m "Test: create folder from Jenkins"
 
                 git push origin main
-
                 '''
                 }
 
