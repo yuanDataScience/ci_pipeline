@@ -94,8 +94,9 @@ spec:
 
         stage('Prepare directories') {
             steps {
-                dir('ci_pipeline')
+                dir('ci_pipeline') {
                 sh 'mkdir -p data/processed_dataset'
+                }
 
             }
         }
