@@ -82,6 +82,14 @@ spec:
             }
         }
 
+
+        stage('Prepare directories') {
+            steps {
+                sh 'mkdir -p data/processed_dataset'
+            }
+        }
+
+
         stage('preprocess data') {
             steps {
                 sh '''

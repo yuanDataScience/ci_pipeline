@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 from utils import (
     DROP_COLUMNS,
@@ -38,6 +39,7 @@ def preprocess_data(file_input_path: str, file_output_path:str) -> None:
     df = convert_column_values(df, TARGET_COLUMN, {'<=50K': 0, '>50K': 1})
     df = fill_missing_values(df, FILL_COLUMNS, 'other')
 
+    os.makedirs(os.path.dirname(file_output_path), exist_ok=True)
     df.to_csv(file_output_path, index=False)
 
 
