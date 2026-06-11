@@ -150,6 +150,7 @@ spec:
 //                 SHORT_SHA = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'}"
 //             }
             steps {
+                dir('ci_pipeline')
                 sh '''
                     . venv/bin/activate
                     python3 src/train.py \
