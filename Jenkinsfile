@@ -75,9 +75,15 @@ spec:
 
         stage('load training data') {
             steps {
+                dir('ci_pipeline')
                 sh '''
                     . venv/bin/activate
+                    mkdir -p data/raw_dataset
                     python3 src/utils.py
+
+                    echo "After dataset creation:"
+                    pwd
+                    find . -name train.csv
                 '''
             }
         }
@@ -85,14 +91,16 @@ spec:
 
         stage('Prepare directories') {
             steps {
+                dir('ci_pipeline')
                 sh 'mkdir -p data/processed_dataset'
-                sh 'mkdir -p data/raw_dataset'
+
             }
         }
 
 
         stage('preprocess data') {
             steps {
+                dir('ci_pipeline')
                 sh '''
                     . venv/bin/activate
                     python3 src/utils.py
