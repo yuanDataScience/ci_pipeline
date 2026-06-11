@@ -92,24 +92,26 @@ spec:
         }
 
         stage('update git and dvc') {
-            sh '''
-                git config user.name "jenkins"
-                git config user.email "jenkins@ci.local"
-                dvc add data/raw_dataset/train.csv
-                dvc add data/raw_dataset/test.csv
-                dvc add data/processed_dataset/train.csv
-                dvc add data/processed_dataset/test.csv
+            steps {
+                sh '''
+                    git config user.name "jenkins"
+                    git config user.email "jenkins@ci.local"
+                    dvc add data/raw_dataset/train.csv
+                    dvc add data/raw_dataset/test.csv
+                    dvc add data/processed_dataset/train.csv
+                    dvc add data/processed_dataset/test.csv
 
-                git add data/raw_dataset/*.dvc
-                git add data/processed_dataset/*.dvc
-                git add .gitignore
+                    git add data/raw_dataset/*.dvc
+                    git add data/processed_dataset/*.dvc
+                    git add .gitignore
 
-                git config user.name "jenkins"
-                git config user.email "jenkins@ci.local"
+                    git config user.name "jenkins"
+                    git config user.email "jenkins@ci.local"
 
-                dvc push
-                git push
-            '''
+                    dvc push
+                    git push
+                '''
+            }
 
         }
 
