@@ -27,10 +27,23 @@ spec:
       volumeMounts:
       - name: dvc-cache-volume
         mountPath: /var/jenkins_dvc_cache
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:debug
+      command: ["cat"]
+      tty: true
+      volumeMounts:
+      - name: registry-credentials
+        mountPath: /kaniko/.docker # Kaniko automatically looks here for config.json
   volumes:
   - name: dvc-cache-volume
     persistentVolumeClaim:
       claimName: jenkins-dvc-cache-pvc
+  - name: registry-credentials
+    secret:
+      secretName: regcred
+      items:
+      - key: .dockerconfigjson
+        path: config.json
 """
   }
 }
@@ -159,12 +172,6 @@ spec:
 
 
         stage('train model') {
-//              environment {
-//                 //extract the first 7 characters of the Git Commit Hash
-//                 // Fall back to 'latest' if GIT_COMMIT isn't populated for some reason
-//
-//                 SHORT_SHA = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'}"
-//             }
             steps {
                 dir('ci_pipeline') {
                 sh '''
@@ -175,6 +182,27 @@ spec:
                     --git_branch ${GIT_BRANCH}
 
                 '''
+                }
+            }
+        }
+
+        stage('build docker') {
+
+            steps {
+                dir('ci_pipeline') {
+                    container('kaniko') {
+                    // Back to a clean, one-line command
+                    sh "echo SHORT_SHA = ${env.SHORT_SHA}"
+                    sh """
+                    /kaniko/executor \
+                    --context=dir=. --dockerfile=Dockerfile \
+                    --destination=huangyuan2000/fastapi-demo:${env.SHORT_SHA} \
+                    --destination=huangyuan2000/fastapi-demo:latest \
+                    --cache=true \
+                    --cache-dir=/var/jenkins_dvc_cache
+                    """
+                    }
+
                 }
             }
         }
