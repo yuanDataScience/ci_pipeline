@@ -102,9 +102,12 @@ spec:
 
         stage('update git and dvc') {
             steps {
+                dir('ci_pipeline') {
                 sh '''
+
                     git config user.name "jenkins"
                     git config user.email "jenkins@ci.local"
+
                     dvc add data/raw_dataset/train.csv
                     dvc add data/raw_dataset/test.csv
                     dvc add data/processed_dataset/train.csv
@@ -114,12 +117,12 @@ spec:
                     git add data/processed_dataset/*.dvc
                     git add .gitignore
 
-                    git config user.name "jenkins"
-                    git config user.email "jenkins@ci.local"
+                    git commit -m "Update datasets via DVC" || echo "No changes to commit"
 
                     dvc push
-                    git push
+                    git push origin HEAD
                 '''
+                }
             }
 
         }
