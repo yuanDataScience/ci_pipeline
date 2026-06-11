@@ -24,7 +24,7 @@ def upload_training(pipeline: Pipeline, metrics: dict, params:dict,
         exp_id = exp.experiment_id
 
     with mlflow.start_run(experiment_id=exp_id):
-        mlflow.set_tag({
+        mlflow.set_tags({
             "git_sha": git_sha,
             "git_branch": git_branch,
             "short_sha": sha_id,
