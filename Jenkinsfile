@@ -75,7 +75,7 @@ spec:
 
         stage('load training data') {
             steps {
-                dir('ci_pipeline')
+                dir('ci_pipeline') {
                 sh '''
                     . venv/bin/activate
                     mkdir -p data/raw_dataset
@@ -85,6 +85,7 @@ spec:
                     pwd
                     find . -name train.csv
                 '''
+                }
             }
         }
 
