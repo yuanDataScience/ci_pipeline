@@ -62,6 +62,7 @@ spec:
 
         stage('Setup Python Environment') {
             steps {
+                dir('ci_pipeline') {
                 sh '''
 
                     python3 -m venv $VENV_DIR
@@ -69,6 +70,7 @@ spec:
 
                    pip install -r requirements.txt
                 '''
+                }
             }
         }
 
