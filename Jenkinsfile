@@ -86,6 +86,7 @@ spec:
         stage('Prepare directories') {
             steps {
                 sh 'mkdir -p data/processed_dataset'
+                sh 'mkdir -p data/raw_dataset'
             }
         }
 
@@ -94,6 +95,7 @@ spec:
             steps {
                 sh '''
                     . venv/bin/activate
+                    python3 src/utils.py
                     python3 src/process_dataset.py
                     python3 -m pip install --upgrade pip
                 '''

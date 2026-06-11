@@ -1,6 +1,7 @@
 import json
 import shutil
 from pathlib import Path
+import os
 
 import pandas as pd
 import optuna
@@ -23,6 +24,7 @@ ONE_HOT_COLUMNS: list[str] = ["race", "sex"]
 NUMERICAL_COLUMNS: list[str] = ["age", "fnlwgt", "education-num", "capital-gain",
                      "capital-loss", "hours-per-week"]
 TARGET_COLUMN: str = "class"
+RAW_DATA: str = "data/raw_dataset"
 TRAINING_DATASET: str = "data/raw_dataset/train.csv"
 TESTING_DATASET: str = "data/raw_dataset/test.csv"
 PROCESSED_TRAINING_DATASET: str = "data/processed_dataset/train.csv"
@@ -59,7 +61,7 @@ def initialize_dataset():
         stratify=adult["class"],
         random_state=SEED
     )
-
+    os.makedirs(os.path.dirname(RAW_DATA), exist_ok=True)
     df_train.to_csv(TRAINING_DATASET, index=False)
     df_test.to_csv(TESTING_DATASET, index=False)
 
