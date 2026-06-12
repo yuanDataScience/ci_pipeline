@@ -56,34 +56,40 @@ spec:
     stages{
         stage('Checkout Code') {
             steps {
-                 // Use Jenkins' built-in Git step
-                 sshagent(credentials: ['github_ssh']) {
-                     sh '''
-                     set -e
+                sshagent(credentials: ['github_ssh']) {
+                    sh '''
+                    set -e
+                    mkdir -p ~/.ssh
+                    ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-                mkdir -p ~/.ssh
-                ssh-keyscan github.com >> ~/.ssh/known_hosts
-
-                git clone git@github.com:yuanDataScience/ci_pipeline.git
-                cd ci_pipeline
-                '''
+                    git clone git@github.com:yuanDataScience/ci_pipeline.git
+                    cd ci_pipeline
+                    '''
                  }
-
             }
         }
-
 
         stage('Setup Python Environment') {
             steps {
                 dir('ci_pipeline') {
                 sh '''
-
                     python3 -m venv $VENV_DIR
                     . $VENV_DIR/bin/activate
-
                    pip install -r requirements.txt
                 '''
                 }
+            }
+        }
+
+        stage('Prepare directories') {
+            steps {
+                dir('ci_pipeline') {
+                sh '''
+                mkdir -p data/processed_dataset
+                mkdir -p data/raw_dataset
+                '''
+                }
+
             }
         }
 
@@ -93,7 +99,6 @@ spec:
                 dir('ci_pipeline') {
                 sh '''
                     . venv/bin/activate
-                    mkdir -p data/raw_dataset
                     python3 src/utils.py
 
                     echo "After dataset creation:"
@@ -104,25 +109,12 @@ spec:
             }
         }
 
-
-        stage('Prepare directories') {
-            steps {
-                dir('ci_pipeline') {
-                sh 'mkdir -p data/processed_dataset'
-                }
-
-            }
-        }
-
-
         stage('preprocess data') {
             steps {
                 dir('ci_pipeline'){
                 sh '''
                     . venv/bin/activate
-                    python3 src/utils.py
                     python3 src/process_dataset.py
-                    python3 -m pip install --upgrade pip
                 '''
                 }
             }
