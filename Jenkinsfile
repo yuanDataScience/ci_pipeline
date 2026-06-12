@@ -52,7 +52,6 @@ spec:
             VENV_DIR = 'venv'
         }
 
-
     stages{
         stage('Checkout Code') {
             steps {
@@ -89,7 +88,17 @@ spec:
                 mkdir -p data/raw_dataset
                 '''
                 }
+            }
+        }
 
+        stage('DVC Setup') {
+            steps {
+                // Configure DVC to use the shared persistent cache directory
+                sh 'dvc config cache.dir /var/jenkins_dvc_cache'
+                sh 'dvc config cache.shared group'
+
+                // Use copy for guaranteed Samba compatibility, or hardlink,copy as a fallback
+                sh 'dvc config cache.type copy' // or copy, depending on your storage backend
             }
         }
 
