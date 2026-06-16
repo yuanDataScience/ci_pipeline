@@ -190,17 +190,23 @@ spec:
         stage('build docker') {
 
             steps {
-                dir('ci_pipeline') {
+                sshagent(credentials: ['github_ssh']) {
+                    sh '''
+                    rm -rf inference_fastapi_k8s
+                    git clone git@github.com:yuanDataScience/inference_fastapi_k8s.git
+                    '''
+                 }
+                dir('inference_fastapi_k8s') {
                     container('kaniko') {
                     // Back to a clean, one-line command
-                    sh "echo SHORT_SHA = ${env.SHORT_SHA}"
+                    // sh "echo SHORT_SHA = ${env.SHORT_SHA}"
+
                     sh """
                     /kaniko/executor \
-                    --context=dir=. --dockerfile=Dockerfile \
-                    --destination=huangyuan2000/fastapi-demo:${env.SHORT_SHA} \
-                    --destination=huangyuan2000/fastapi-demo:latest \
+                    --context=. \
+                    --dockerfile=Dockerfile \
+                    --destination=huangyuan2000/fastapi-demo:V3 \
                     --cache=true \
-                    --cache-repo="" \
                     --cache-dir=/var/jenkins_dvc_cache
                     """
                     }
