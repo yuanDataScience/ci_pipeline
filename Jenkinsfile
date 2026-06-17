@@ -233,19 +233,24 @@ spec:
                 git config user.email "jenkins@ci.local"
 
                 # if kustomize binary is available in the image, use it
-                if command -v kustomize &> /dev/null; then
+                # Adding "|| true" directly to the command ensures set -e allows the check to fail gracefully
+                if command -v kustomize &> /dev/null || true; then
+                    # We still need to double-check if the binary actually exists before calling it
+                    if [ -x "$(command -v kustomize)" ]; then
                         kustomize edit set image huangyuan2000/fastapi-demo=huangyuan2000/fastapi-demo:${SHORT_SHA}
                     else
-                        # Fallback parsing block using sed if kustomize isn't installed in the runner
+                        echo "kustomize not found, falling back to sed replacement..."
                         if grep -q "newTag:" kustomization.yaml; then
-                            sed -i "s/newTag:.*/newTag: ${SHORT_SHA}/g" kustomization.yaml
+                            sed -i "s/\\(newTag:\\s*\\).*/\\1${SHORT_SHA}/" kustomization.yaml
                         else
-                            echo -e "\\n  newTag: ${SHORT_SHA}" >> kustomization.yaml
+                            echo "  - name: huangyuan2000/fastapi-demo" >> kustomization.yaml
+                            echo "    newTag: ${SHORT_SHA}" >> kustomization.yaml
                         fi
                     fi
+                fi
 
-                    git add kustomization.yaml
-                    git commit -m "Auto-bump inference image tag to ${SHORT_SHA} [skip ci]" || echo "No changes to commit"
+                git add kustomization.yaml
+                git commit -m "Auto-bump inference image tag to ${SHORT_SHA} [skip ci]" || echo "No changes to commit"
 
 
                 git push origin main
