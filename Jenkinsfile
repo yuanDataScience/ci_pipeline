@@ -219,45 +219,30 @@ spec:
         stage('Git update deployment') {
             steps {
                 sshagent(credentials: ['github_ssh']) {
-                sh '''
-                set -e
+                    sh '''
+                    set -e
 
-                mkdir -p ~/.ssh
-                ssh-keyscan github.com >> ~/.ssh/known_hosts
+                    mkdir -p ~/.ssh
+                    ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-                rm -rf argocd_ci
-                git clone git@github.com:yuanDataScience/argocd_ci.git
-                cd argocd_ci
+                    rm -rf argocd_ci
+                    git clone git@github.com:yuanDataScience/argocd_ci.git
+                    cd argocd_ci
 
-                git config user.name "jenkins"
-                git config user.email "jenkins@ci.local"
+                    git config user.name "jenkins"
+                    git config user.email "jenkins@ci.local"
 
-                # if kustomize binary is available in the image, use it
-                # Adding "|| true" directly to the command ensures set -e allows the check to fail gracefully
-                if command -v kustomize &> /dev/null || true; then
-                    # We still need to double-check if the binary actually exists before calling it
-                    if [ -x "$(command -v kustomize)" ]; then
-                        kustomize edit set image
-                        huangyuan2000/fastapi-inference=huangyuan2000/fastapi-inference:${SHORT_SHA}
-                    else
-                        echo "kustomize not found, falling back to sed replacement..."
-                        if grep -q "newTag:" kustomization.yaml; then
-                            sed -i "s/\\(newTag:\\s*\\).*/\\1${SHORT_SHA}/" kustomization.yaml
-                        else
-                            echo "  - name: huangyuan2000/fastapi-inference" >> kustomization.yaml
-                            echo "    newTag: ${SHORT_SHA}" >> kustomization.yaml
-                        fi
-                    fi
-                fi
+                    # Execute Kustomize directly from your new Python 3.12-slim image
+                    kustomize edit set image huangyuan2000/fastapi-inference=huangyuan2000/fastapi-inference:${SHORT_SHA}
 
-                git add kustomization.yaml
-                git commit -m "Auto-bump inference image tag to ${SHORT_SHA} [skip ci]" || echo "No changes to commit"
+                    git add kustomization.yaml
 
+                    # The || true catches the case where the commit has the same exact tag and prevents the pipeline from failing
+                    git commit -m "Auto-bump inference image tag to ${SHORT_SHA} [skip ci]" || echo "No changes to commit"
 
-                git push origin main
-                '''
+                    git push origin main
+                    '''
                 }
-
             }
         }
     }
