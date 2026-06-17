@@ -199,15 +199,15 @@ spec:
                 dir('inference_fastapi_k8s') {
                     container('kaniko') {
                     // Back to a clean, one-line command
-                    // sh "echo SHORT_SHA = ${env.SHORT_SHA}"
+                     sh "echo BUILDING IMAGE WITH TAG: ${env.SHORT_SHA}"
 
                     sh """
                     /kaniko/executor \
                     --context=. \
                     --dockerfile=Dockerfile \
-                    --destination=huangyuan2000/fastapi-demo:V3 \
+                    --destination=huangyuan2000/fastapi-demo:${env.SHORT_SHA} \
                     --cache=true \
-                    --cache-dir=/var/jenkins_dvc_cache
+                    --cache-dir=/var/jenkins_dvc_cache \
                     --push-retry=3 \
                     --no-push-cache=true
                     """
@@ -226,17 +226,28 @@ spec:
                 mkdir -p ~/.ssh
                 ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-                git clone git@github.com:yuanDataScience/argocd_apps.git
-                cd argocd_apps
+                rm -rf argocd_ci
+                git clone git@github.com:yuanDataScience/argocd_ci.git
+                cd argocd_ci
 
                 git config user.name "jenkins"
                 git config user.email "jenkins@ci.local"
 
-                mkdir -p test
-                touch test/.gitkeep
+                # if kustomize binary is available in the image, use it
+                if command -v kustomize &> /dev/null; then
+                        kustomize edit set image huangyuan2000/fastapi-demo=huangyuan2000/fastapi-demo:${SHORT_SHA}
+                    else
+                        # Fallback parsing block using sed if kustomize isn't installed in the runner
+                        if grep -q "newTag:" kustomization.yaml; then
+                            sed -i "s/newTag:.*/newTag: ${SHORT_SHA}/g" kustomization.yaml
+                        else
+                            echo -e "\\n  newTag: ${SHORT_SHA}" >> kustomization.yaml
+                        fi
+                    fi
 
-                git add test/.gitkeep
-                git diff --cached --quiet || git commit -m "Test: create folder from Jenkins"
+                    git add kustomization.yaml
+                    git commit -m "Auto-bump inference image tag to ${SHORT_SHA} [skip ci]" || echo "No changes to commit"
+
 
                 git push origin main
                 '''
