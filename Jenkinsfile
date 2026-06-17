@@ -205,7 +205,7 @@ spec:
                     /kaniko/executor \
                     --context=. \
                     --dockerfile=Dockerfile \
-                    --destination=huangyuan2000/fastapi-demo:${env.SHORT_SHA} \
+                    --destination=huangyuan2000/fastapi-inference:${env.SHORT_SHA} \
                     --cache=true \
                     --cache-dir=/var/jenkins_dvc_cache \
                     --no-push-cache=true
@@ -237,13 +237,14 @@ spec:
                 if command -v kustomize &> /dev/null || true; then
                     # We still need to double-check if the binary actually exists before calling it
                     if [ -x "$(command -v kustomize)" ]; then
-                        kustomize edit set image huangyuan2000/fastapi-demo=huangyuan2000/fastapi-demo:${SHORT_SHA}
+                        kustomize edit set image
+                        huangyuan2000/fastapi-inference=huangyuan2000/fastapi-inference:${SHORT_SHA}
                     else
                         echo "kustomize not found, falling back to sed replacement..."
                         if grep -q "newTag:" kustomization.yaml; then
                             sed -i "s/\\(newTag:\\s*\\).*/\\1${SHORT_SHA}/" kustomization.yaml
                         else
-                            echo "  - name: huangyuan2000/fastapi-demo" >> kustomization.yaml
+                            echo "  - name: huangyuan2000/fastapi-inference" >> kustomization.yaml
                             echo "    newTag: ${SHORT_SHA}" >> kustomization.yaml
                         fi
                     fi
