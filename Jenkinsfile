@@ -208,7 +208,6 @@ spec:
                     --destination=huangyuan2000/fastapi-demo:${env.SHORT_SHA} \
                     --cache=true \
                     --cache-dir=/var/jenkins_dvc_cache \
-                    --push-retry=3 \
                     --no-push-cache=true
                     """
                     }
