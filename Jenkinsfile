@@ -9,7 +9,7 @@ kind: Pod
 spec:
   containers:
     - name: python
-      image:  huangyuan2000/python-dvc:3.10.1
+      image:  huangyuan2000/python-dvc:3.12
       command:
         - sleep
         - infinity
